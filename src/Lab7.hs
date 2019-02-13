@@ -22,27 +22,29 @@ parse (MkParser f) xs = f xs
 -- if the first character in the input satisfies the predicate.
 ch :: (Char -> Bool) -> Parser Char
 ch p = MkParser $ \xs -> case xs of
-    (y:ys) | p y -> undefined
-    _            -> undefined
+    (y:ys) | p y -> Just (y,ys)
+    _            -> Nothing
 
 --------------------------------------------------------------------------------
 -- Parsers are functors
 
 instance Functor Parser where
     fmap f (MkParser g) =
-        MkParser $ \xs -> undefined
+        MkParser $ \xs -> case g xs of
+          (Just (x, y)) -> Just (f x, y)
+          _             -> Nothing
 
 --------------------------------------------------------------------------------
 -- Parsers are applicative functors
 
 instance Applicative Parser where
-    pure x = undefined
+    pure x = MkParser $ \y -> Just (x, y)
 
     (MkParser a) <*> p = MkParser (\xs -> case a xs of
-        Nothing      -> undefined
+        Nothing      -> Nothing
         Just (f, ys) -> let (MkParser b) = p in case b ys of
-            Nothing      -> undefined
-            Just (x, zs) -> undefined)
+            Nothing      -> Nothing
+            Just (x, zs) -> Just (f x, zs))
 
 --------------------------------------------------------------------------------
 -- Alternative
