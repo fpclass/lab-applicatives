@@ -11,7 +11,7 @@ import Test.QuickCheck
 
 import Data.Char
 
-import qualified Lab6 as L
+import qualified Lab7 as L
 
 --------------------------------------------------------------------------------
 
