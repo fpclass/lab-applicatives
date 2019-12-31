@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 -- Functional Programming (CS141)                                             --
--- Lab 7: Applicative functors                                                --
+-- Lab: Applicative functors                                                  --
 --------------------------------------------------------------------------------
 
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -11,7 +11,7 @@ import Test.QuickCheck
 
 import Data.Char
 
-import qualified Lab7 as L
+import qualified Lab as L
 
 --------------------------------------------------------------------------------
 

@@ -1,9 +1,9 @@
 --------------------------------------------------------------------------------
 -- Functional Programming (CS141)                                             --
--- Lab 7: Applicative functors                                                --
+-- Lab: Applicative functors                                                  --
 --------------------------------------------------------------------------------
 
-module Lab7 where
+module Lab where
 
 import Data.Char
 import Data.Maybe

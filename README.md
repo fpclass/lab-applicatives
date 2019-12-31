@@ -1,1 +1,1 @@
-# Lab 7: Applicative functors
+# Lab: Applicative functors
