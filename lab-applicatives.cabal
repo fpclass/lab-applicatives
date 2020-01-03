@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d9ff529f2d7e2ab4cca93e7e7470dbcfb3f12923d6d84cadfb6f5f2b769cdadf
+-- hash: a1bf779483be73f38497aca18df7ed3277c780b5045c6a90e801b29640f387fc
 
 name:           lab-applicatives
 version:        0.2.0.0
@@ -42,7 +42,7 @@ test-suite lab7-test
       Paths_lab_applicatives
   hs-source-dirs:
       test
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -threaded -rtsopts
   build-depends:
       QuickCheck
     , base >=4.7 && <5
