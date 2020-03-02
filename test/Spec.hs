@@ -111,18 +111,18 @@ main = hspec $ do
             let suffix = ' ' : xs
             in L.parse L.nat (show n ++ suffix) `shouldBe` Just (n, suffix)
     describe "primitives (lparen, rparen, plus)" $ do
-        prop "lparen parses left parentheses" $ \xs ->
-            L.parse L.lparen ('(' : xs) `shouldBe` Just ('(', xs)
-        prop "rparen parses right parentheses" $ \xs ->
-            L.parse L.rparen (')' : xs) `shouldBe` Just (')', xs)
-        prop "plus parses +" $ \xs ->
-            L.parse L.plus ('+' : xs) `shouldBe` Just ('+', xs)
-        prop "lparen fails on other input" $ forAll (except '(') $ \x ->
-            L.parse L.lparen [x] `shouldBe` Nothing
-        prop "rparen fails on other input" $ forAll (except ')') $ \x ->
-            L.parse L.rparen [x] `shouldBe` Nothing
-        prop "plus fails on other input" $ forAll (except '+') $ \x ->
-            L.parse L.plus [x] `shouldBe` Nothing
+        prop "lparen parses left parentheses" $ \xs n ->
+            L.parse L.lparen (replicate n ' ' ++ ('(' : xs)) `shouldBe` Just ('(', xs)
+        prop "rparen parses right parentheses" $ \xs n ->
+            L.parse L.rparen (replicate n ' ' ++ (')' : xs)) `shouldBe` Just (')', xs)
+        prop "plus parses +" $ \xs n ->
+            L.parse L.plus (replicate n ' ' ++ ('+' : xs)) `shouldBe` Just ('+', xs)
+        prop "lparen fails on other input" $ forAll (except '(') $ \x n ->
+            L.parse L.lparen (replicate n ' ' ++ [x]) `shouldBe` Nothing
+        prop "rparen fails on other input" $ forAll (except ')') $ \x n ->
+            L.parse L.rparen (replicate n ' ' ++ [x]) `shouldBe` Nothing
+        prop "plus fails on other input" $ forAll (except '+') $ \x n ->
+            L.parse L.plus (replicate n ' ' ++ [x]) `shouldBe` Nothing
     describe "val" $ do
         prop "parses natural numbers with arbitrary amounts of preceding whitespace" $
             \(Positive n) (Positive m) -> L.parse L.val (replicate n ' ' ++ show m) `shouldBe`
@@ -133,6 +133,6 @@ main = hspec $ do
 
 
 except :: Char -> Gen Char
-except c = suchThat arbitrary (/= c)
+except c = suchThat arbitrary (\x -> x /= c && not (elem x ws))
 
---------------------------------------------------------------------------------
+-------------------------------------
