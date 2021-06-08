@@ -5,6 +5,9 @@
 
 module Lab where
 
+import Control.Monad
+
+import Data.Bifunctor
 import Data.Char
 import Data.Maybe
 
@@ -22,27 +25,80 @@ parse (MkParser f) xs = f xs
 -- if the first character in the input satisfies the predicate.
 ch :: (Char -> Bool) -> Parser Char
 ch p = MkParser $ \xs -> case xs of
-    (y:ys) | p y -> undefined
-    _            -> undefined
+    (y:ys) | p y -> Just (y,ys)
+    _            -> Nothing
 
 --------------------------------------------------------------------------------
 -- Parsers are functors
 
 instance Functor Parser where
+    -- fmap :: (a -> b) -> Parser a -> Parser b
+    -- fmap f (MkParser g) =
+    --     MkParser $ fmap (first f) . g 
     fmap f (MkParser g) =
-        MkParser $ \xs -> undefined
+        MkParser $ \xs -> fmap (\(x,inp) -> (f x,inp)) (g xs)
+    -- fmap f (MkParser g) =
+    --     MkParser $ \xs -> case g xs of 
+    --         Nothing -> Nothing
+    --         Just (x,inp) -> Just (f x,inp)
 
 --------------------------------------------------------------------------------
 -- Parsers are applicative functors
 
 instance Applicative Parser where
-    pure x = undefined
+    -- pure :: a -> Parser a
+    pure x = MkParser $ \xs -> Just (x,xs)
 
+    -- (<*>) :: Parser (a -> b) -> Parser a -> Parser b
     (MkParser a) <*> p = MkParser (\xs -> case a xs of
-        Nothing      -> undefined
+        Nothing      -> Nothing
         Just (f, ys) -> let (MkParser b) = p in case b ys of
-            Nothing      -> undefined
-            Just (x, zs) -> undefined)
+            Nothing      -> Nothing
+            Just (x, zs) -> Just (f x, zs))
+
+-- validModuleCode :: Parser Int
+-- validModuleCode = 
+--     (\x y a b c -> digitToInt a * 100 + 
+--                    digitToInt b * 10 + 
+--                    digitToInt c) <$>
+--     ch (=='c') <*> 
+--     ch (=='s') <*> 
+--     ch isDigit <*> 
+--     ch isDigit <*> 
+--     ch isDigit
+
+instance Monad Parser where 
+    -- (>>=) :: Parser a -> (a -> Parser b) -> Parser b
+    (MkParser m) >>= f = MkParser $ \xs -> case m xs of 
+        Nothing -> Nothing
+        Just (x,xs') -> let (MkParser n) = f x
+                        in n xs'
+
+instance MonadFail Parser where 
+    -- fail :: String -> Parser a
+    fail _ = empty
+
+string :: String -> Parser String
+string = mapM (ch . (==))
+
+validModuleCode :: Parser Int
+validModuleCode = token $ do 
+    string "cs"
+    [a,b,c] <- replicateM 3 (ch isDigit)
+    pure $ digitToInt a * 100 
+         + digitToInt b * 10 
+         + digitToInt c
+
+-- validModuleCode :: Parser Int
+-- validModuleCode =  
+--     ch (=='c') >>
+--     ch (=='s') >>
+--     ch isDigit >>= \a ->
+--     ch isDigit >>= \b ->
+--     ch isDigit >>= \c ->
+--     pure $ digitToInt a * 100 
+--          + digitToInt b * 10 
+--          + digitToInt c
 
 --------------------------------------------------------------------------------
 -- Alternative
@@ -59,10 +115,14 @@ class Applicative f => Alternative f where
     many p = some p <|> pure []
 
 instance Alternative Parser where
-    empty = undefined
+    -- empty :: Parser a
+    empty = MkParser $ \xs -> Nothing
 
-    (MkParser a) <|> (MkParser b) =
-        undefined
+    -- (<|>) :: Parser a -> Parser a -> Parser a
+    (MkParser a) <|> (MkParser b) = MkParser $ \xs ->
+        case a xs of 
+            Just r -> Just r 
+            Nothing -> b xs
 
 --------------------------------------------------------------------------------
 
@@ -79,19 +139,19 @@ whitespace :: Parser String
 whitespace = many (oneOf [' ', '\t', '\n', '\r'])
 
 token :: Parser a -> Parser a
-token p = undefined
+token p = whitespace *> p
 
 between :: Parser open -> Parser close -> Parser a -> Parser a
-between open close p = undefined
+between open close p = open *> p <* close
 
 --------------------------------------------------------------------------------
 
 data Expr = Val Integer | Add Expr Expr
-    deriving Eq
+    deriving (Show, Eq)
 
-instance Show Expr where
-    show (Val n)   = show n
-    show (Add l r) = concat ["( ", show l, " + ", show r, " )"]
+-- instance Show Expr where
+--     show (Val n)   = show n
+--     show (Add l r) = concat ["( ", show l, " + ", show r, " )"]
 
 eval :: Expr -> Integer
 eval (Val n)   = n
@@ -99,14 +159,17 @@ eval (Add l r) = eval l + eval r
 
 --------------------------------------------------------------------------------
 
+lexme :: Char -> Parser Char
+lexme c = token (ch (==c))
+
 lparen :: Parser Char
-lparen = undefined
+lparen = lexme '('
 
 rparen :: Parser Char
-rparen = undefined
+rparen = lexme ')'
 
 plus :: Parser Char
-plus = undefined
+plus = lexme '+'
 
 val :: Parser Expr
 val = Val <$> token nat
@@ -117,9 +180,11 @@ add = between lparen rparen $
             <*> (plus *> token expr)
 
 expr :: Parser Expr
-expr = undefined
+expr = val <|> add
 
 parseAndEval :: String -> Maybe Integer
-parseAndEval xs = eval . fst <$> parse expr xs
+parseAndEval xs = case parse (expr <* whitespace) xs of
+    Just (e,[]) -> Just (eval e)
+    _ -> Nothing
 
 --------------------------------------------------------------------------------
